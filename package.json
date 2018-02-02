@@ -4,7 +4,7 @@
   "description": "Filesystem backend for document archive",
   "main": "lib/server.js",
   "scripts": {
-    "start": "node lib/server.js",
+    "start": "node lib/server.js -d data",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
