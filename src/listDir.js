@@ -1,10 +1,12 @@
 const fs = require('fs')
 const path = require('path')
 
+const DOT = '.'.charCodeAt(0)
+
 /*
   Retrieves a list of entries recursively, including file names and stats.
 */
-module.exports = function listDir(dir, opts = {}) {
+module.exports = async function listDir(dir, opts = {}) {
   return new Promise((resolve, reject) => {
     _list(dir, opts, (err, records) => {
       if (err) reject(err)
@@ -12,8 +14,6 @@ module.exports = function listDir(dir, opts = {}) {
     })
   })
 }
-
-const DOT = '.'.charCodeAt(0)
 
 function _list(dir, opts, done) {
   let results = []
