@@ -1,0 +1,48 @@
+const fs = require('fs')
+const path = require('path')
+
+/*
+  Retrieves a list of entries recursively, including file names and stats.
+*/
+module.exports = function listDir(dir, opts = {}) {
+  return new Promise((resolve, reject) => {
+    _list(dir, opts, (err, records) => {
+      if (err) reject(err)
+      else resolve(records)
+    })
+  })
+}
+
+const DOT = '.'.charCodeAt(0)
+
+function _list(dir, opts, done) {
+  let results = []
+  fs.readdir(dir, (err, list) => {
+    if (err) return done(err)
+    let pending = list.length
+    if (!pending) return done(null, results)
+    function _continue() {
+      if (!--pending) done(null, results)
+    }
+    list.forEach((name) => {
+      if (opts.ignoreDotFiles && name.charCodeAt(0) === DOT) {
+        return _continue()
+      }
+      let absPath = path.resolve(dir, name)
+      fs.stat(absPath, (err, stat) => {
+        if (stat && stat.isDirectory()) {
+          _list(name, opts, (err, res) => {
+            results = results.concat(res)
+            _continue()
+          })
+        } else {
+          results.push(Object.assign({}, stat, {
+            name,
+            path: absPath,
+          }))
+          _continue()
+        }
+      })
+    })
+  })
+}
