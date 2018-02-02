@@ -7,36 +7,45 @@ const TEXTISH = ['txt', 'html', 'xml', 'json']
 
 /*
   Provides a list of records found in an archive folder.
+
+  @param {object} opts
+    - `noBinaryData`: do not load the content of binary files
+    - `ignoreDotFiles`: ignore dot-files
 */
-module.exports = function readArchive(archiveDir, opts = {}) {
+module.exports = async function readArchive(archiveDir, opts = {}) {
   // make sure that the given path is a dar
-  return _isDocumentArchive(archiveDir)
-  .then(isDocumentArchive => {
-    if (!isDocumentArchive) {
-      throw new Error(archiveDir + ' is not a document archive')
-    }
-    return _readFiles(archiveDir, opts)
-  })
-}
-
-function _readFiles(archiveDir, opts) {
-  // first get a list of stats
-  return listDir(archiveDir, opts)
-  // then retrieve a record for every file
-  .then(entries => {
-    let result = []
-    return Promise.all(entries.map(entry => {
+  if (await _isDocumentArchive(archiveDir)) {
+    // first get a list of stats
+    const entries = await listDir(archiveDir, opts)
+    // then get file records as specified TODO:link
+    let result = await Promise.all(entries.map(entry => {
       return _getFileRecord(entry, opts)
-      .then(record => {
-        result.push(record)
-      })
-    })).then(() => {
-      return result
-    })
-  })
+    }))
+    return result
+  } else {
+    throw new Error(archiveDir + ' is not a document archive')
+  }
 }
 
-function _getFileRecord(fileEntry, opts) {
+/*
+  Provides a record for a file as it is used for the DocumentArchive presistence protocol.
+
+  Binary files can be exluced using `opts.noBinaryData`.
+
+  @example
+
+  ```
+  {
+    id: 'manuscript.xml',
+    encoding: 'utf8',
+    data: '<article>....</article>',
+    size: 5782,
+    createdAt: 123098123098,
+    updatedAt: 123234567890,
+  }
+  ```
+*/
+async function _getFileRecord(fileEntry, opts) {
   // for text files load content
   // for binaries use a url
   let record = {
@@ -73,7 +82,7 @@ function _getFileRecord(fileEntry, opts) {
   }
 }
 
-function _isDocumentArchive(archiveDir) {
+async function _isDocumentArchive(archiveDir) {
   // assuming it is a DAR if the folder exists and there is a manifest.xml
   return _fileExists(path.join(archiveDir, 'manifest.xml'))
 }
