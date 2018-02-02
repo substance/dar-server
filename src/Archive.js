@@ -1,10 +1,9 @@
 let fs = require('fs')
-let path = require('path')
 
 class Archive {
-  constructor(dirPath) {
-    if(!dirPath) throw Error('Please provide path to folder with archives')
-    this.path = dirPath
+  constructor(path) {
+    if(!path) throw Error('Please provide path to folder with archives')
+    this.path = path
   }
 
   retrieve(id) {
@@ -34,16 +33,16 @@ class Archive {
 
   retrieveXmlData(darId, fileName) {
     return new Promise((resolve, reject) => {
-      const filePath = path.join(this.path, darId, fileName)
+      const path = this.path + '/' + darId +  '/' + fileName
       let file = {}
-      fs.stat(filePath, (err, stat) => {
+      fs.stat(path, (err, stat) => {
         if(err) return reject(err)
         // Detect encoding
         file.encoding = 'utf-8'
         file.size = stat.size
         file.createdAt = stat.birthtime.getTime()
         file.updatedAt = stat.mtime.getTime()
-        fs.readFile(filePath, file.encoding, (err, data) => {
+        fs.readFile(path, file.encoding, (err, data) => {
           if(err) return reject(err)
           file.data = data
           return resolve(file)
@@ -54,9 +53,9 @@ class Archive {
 
   retrieveAseetData(darId, fileName) {
     return new Promise((resolve, reject) => {
-      const filePath = path.join(this.path, darId, fileName)
+      const path = this.path + '/' + darId +  '/' + fileName
       let file = {}
-      fs.stat(filePath, (err, stat) => {
+      fs.stat(path, (err, stat) => {
         if(err) return reject(err)
         file.encoding = 'url'
         // TODO: generate url
@@ -73,7 +72,7 @@ class Archive {
     let assets = {}
 
     return new Promise((resolve, reject) => {
-      fs.readdir(path.join(this.path, darId), (err, items) => {
+      fs.readdir(this.path + '/' + darId, (err, items) => {
         if(err) return cb(err)
 
         const manifestIndex = items.indexOf('manifest.xml')
@@ -93,30 +92,36 @@ class Archive {
     })
   }
 
-  retrieveAssetPath(darId, fileName) {
-    const filePath = path.join(this.path, darId, fileName)
+  retrieveAsset(darId, fileName) {
+    const path = this.path + '/' + darId +  '/' + fileName
     return this.isDAR(darId)
       .then(exists => {
         if(!exists) throw new Error(id + ' is not a document archive')
-        return this.fileExists(filePath)
+        return this.fileExists(path)
       })
       .then(exists => {
         if(!exists) throw new Error('there is no ' + fileName + ' attached to a document archive ' + darId)
-        return filePath
+        return path
       })
   }
 
   isDAR(id) {
     // We consider folder DAR if the folder exists
     // and there is a manifest.xml and manuscript.xml files inside
-    return Promise.all(['manifest.xml', 'manuscript.xml'].map(f => {
-      return this.fileExists(path.join(this.path, id, f))
-    })).then(res => res.every(b => b))
+    return this.fileExists(this.path + '/' + id +  '/manifest.xml')
+      .then(exists => {
+        if(!exists) return false
+        return this.fileExists(this.path + '/' + id +  '/manuscript.xml')
+      })
+      .then(exists => {
+        if(!exists) return false
+        return true
+      })
   }
 
-  fileExists(filePath) {
+  fileExists(path) {
     return new Promise((resolve, reject) => {
-      fs.stat(filePath, (err, stat) => {
+      fs.stat(path, (err, stat) => {
         let res = true
         if(err) res = false
         return resolve(res)
