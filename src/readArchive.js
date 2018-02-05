@@ -49,7 +49,7 @@ async function _getFileRecord(fileEntry, opts) {
   // for text files load content
   // for binaries use a url
   let record = {
-    id: fileEntry.name,
+    path: fileEntry.name,
     encoding: null,
     size: fileEntry.size,
     createdAt: fileEntry.birthtime.getTime(),
