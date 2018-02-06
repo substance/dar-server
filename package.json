@@ -1,6 +1,6 @@
 {
   "name": "dar-fs",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "Filesystem backend for document archive",
   "main": "lib/server.js",
   "scripts": {
