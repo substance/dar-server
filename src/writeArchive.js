@@ -10,7 +10,7 @@ module.exports = async function writeArchive(archiveDir, rawArchive) {
         return _writeFile(path.join(archiveDir, f), record.data, 'utf8')
       }
       case 'blob': {
-        return _writeFile(path.join(archiveDir, f), record.data, 'blob')
+        return _writeFile(path.join(archiveDir, f), record.data)
       }
       // TODO: or there other encodings which we want to support?
       default:
@@ -21,9 +21,17 @@ module.exports = async function writeArchive(archiveDir, rawArchive) {
 
 function _writeFile(p, data, encoding) {
   return new Promise((resolve, reject) => {
-    fs.writeFile(p, data, encoding, (err) => {
-      if (err) reject()
-      else resolve()
-    })
+    if (typeof data.pipe === 'function') {
+      let file = fs.createWriteStream(p)
+      data.pipe(file)
+      file.on('close', () => {
+        resolve()
+      })
+    } else {
+      fs.writeFile(p, data, encoding, (err) => {
+        if (err) reject()
+        else resolve()
+      })
+    }
   })
 }
