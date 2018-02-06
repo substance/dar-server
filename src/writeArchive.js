@@ -12,7 +12,7 @@ module.exports = async function writeArchive(archiveDir, rawArchive) {
       case 'blob': {
         return _writeFile(path.join(archiveDir, f), record.data)
       }
-      // TODO: or there other encodings which we want to support?
+      // TODO: are there other encodings which we want to support?
       default:
         return false
     }
