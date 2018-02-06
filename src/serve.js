@@ -95,10 +95,13 @@ module.exports = function serve(app, opts = {}) {
           })
           // TODO: need a generic way to create a version
           // with git we would use the commit sha of the latest commit
-          let newVersion = String(Number.parseInt(version, 10) + 1)
           // TODO: without git this is kind of dangerous as we can't rollback
           await writeArchive(archiveDir, archive)
-          await writeVersion(archiveDir, newVersion)
+          // TODO: we could do something like this
+          // let newVersion = String(Number.parseInt(version, 10) + 1)
+          // await writeVersion(archiveDir, newVersion)
+          // ... but instead we just return the same version all the time
+          let newVersion = version
           res.status(200).json({ version: newVersion })
         } catch (err) { // eslint-disable-line no-catch-shadow
           console.error(err)
