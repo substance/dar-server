@@ -1,5 +1,5 @@
 {
-  "name": "dar-fs",
+  "name": "dar-server",
   "version": "0.1.0",
   "description": "Filesystem backend for document archive",
   "main": "index.js",
