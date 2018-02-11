@@ -1,7 +1,7 @@
 const readArchive = require('./readArchive')
 const readVersion = require('./readVersion')
 const writeArchive = require('./writeArchive')
-const writeVersion = require('./writeVersion')
+// const writeVersion = require('./writeVersion')
 // const fs = require('fs')
 
 class FSStorageClient {
