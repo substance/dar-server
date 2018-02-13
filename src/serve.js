@@ -1,11 +1,9 @@
 const fs = require('fs')
 const path = require('path')
 const parseFormdata = require('parse-formdata')
-
 const readArchive = require('./readArchive')
 const readVersion = require('./readVersion')
 const writeArchive = require('./writeArchive')
-const writeVersion = require('./writeVersion')
 
 const DOT = '.'.charCodeAt(0)
 
@@ -23,7 +21,10 @@ module.exports = function serve(app, opts = {}) {
     next();
   })
 
-  app.get(apiUrl+'/:dar', (req, res) => {
+  /*
+    Endpoint for reading a Dar archive
+  */
+  app.get(apiUrl+'/:dar', async (req, res) => {
     let id = req.params.dar || 'default'
     let archiveDir = path.join(rootDir, id)
     // checking that the archiveDir is really a subfolder of the root dir
@@ -31,39 +32,29 @@ module.exports = function serve(app, opts = {}) {
     if (relDir.charCodeAt(0) === DOT) {
       return res.status(403)
     }
-    // TODO instead of checking if exists we should throw a special error
-    // in readArchive and return a proper http status code
-    fs.stat(archiveDir, async (err) => {
-      if (err) return res.status(404)
-      try {
-        let version = await readVersion(archiveDir)
-        let records = await readArchive(archiveDir, { noBinaryContent: true, ignoreDotFiles: true })
-        // some post-processing: turn the list of records into a hash
-        // and expand to real asset urls
-        let result = {
-          version
+    try {
+      let records = await readArchive(archiveDir, { noBinaryContent: true, ignoreDotFiles: true })
+      Object.keys(records).forEach(recordPath => {
+        let record = records[recordPath]
+        if (record._binary) {
+          delete record._binary
+          record.encoding = 'url'
+          record.data = `${baseUrl}/${id}/assets/${record.path}`
         }
-        records.forEach(record => {
-          result[record.path] = record
-          // content for binaries are not included
-          // instead we add a URL that can be used to retrieve the statically served file
-          if (record._binary) {
-            delete record._binary
-            record.encoding = 'url'
-            record.data = `${baseUrl}/${id}/assets/${record.path}`
-          }
-        })
-        res.json(result)
-      } catch(err) { // eslint-disable-line no-catch-shadow
-        console.error(err)
-        // TODO: map errors to classical HTTP error codes, no messages
-        res.status(500)
-      }
-    })
+      })
+      // TODO: we should not mix records and the version property
+      records.version = '0'
+      res.json(records)
+    } catch(err) { // eslint-disable-line no-catch-shadow
+      console.error(err)
+      res.status(err.httpStatus)
+    }
   })
 
   /*
     Endpoint for uploading files.
+
+    NOTE: Versioning is disabled atm. We may wand to back it via Git.
   */
   app.put(apiUrl+'/:dar', (req, res) => {
     let id = req.params.dar || 'default'

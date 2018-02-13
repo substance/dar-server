@@ -1,59 +1,64 @@
 const readArchive = require('./readArchive')
-const readVersion = require('./readVersion')
 const writeArchive = require('./writeArchive')
-// const writeVersion = require('./writeVersion')
-// const fs = require('fs')
+const path = require('path')
 
+/*
+  A storage client optimised for Desktop clients
+
+  NOTE: No versioning is done atm, but users can do a git init in their Dar
+  folders.
+*/
 class FSStorageClient {
 
-  /*
-    TODO: Add error handling
-  */
   read(archiveDir) {
-
     return new Promise( async (resolve) => {
-      let version = await readVersion(archiveDir)
       let records = await readArchive(archiveDir, { noBinaryContent: true, ignoreDotFiles: true })
-      // some post-processing: turn the list of records into a hash
-      // and expand to real asset urls
-      let result = {
-        version
-      }
-      records.forEach(record => {
-        result[record.path] = record
-        // content for binaries are not included
-        // instead we add a URL that can be used to retrieve the statically served file
+      // Turn binaries into urls
+      Object.keys(records).forEach(recordPath => {
+        let record = records[recordPath]
         if (record._binary) {
           delete record._binary
           record.encoding = 'url'
-          record.data = `${archiveDir}/${record.path}`
+          record.data = path.join(archiveDir, record.path)
         }
       })
-      resolve(result)
+      resolve(records)
     })
   }
 
-  write(archiveDir, archive) {
+  write(archiveDir, rawArchive) {
     return new Promise( async (resolve) => {
-      let version = await readVersion(archiveDir)
-      // For now the client must provide the correct version number
-      if (version !== archive.version) {
-        throw new Error('Incompatible version')
-      }
-      // TODO: need a generic way to create a version
-      // with git we would use the commit sha of the latest commit
-      // TODO: without git this is kind of dangerous as we can't rollback
-      await writeArchive(archiveDir, archive)
-      // TODO: we could do something like this
-      // let newVersion = String(Number.parseInt(version, 10) + 1)
-      // await writeVersion(archiveDir, newVersion)
-      // ... but instead we just return the same version all the time
-      let newVersion = version
-      // We must use a serialised version to conform to the expected output by
-      // PersistedDocumentArchive
-      resolve(JSON.stringify({ version: newVersion}))
+      await _convertBlobs(rawArchive)
+      await writeArchive(archiveDir, rawArchive)
+      resolve(JSON.stringify({ version: 0 }))
     })
   }
+}
+
+/*
+  Convert all blobs to array buffers
+*/
+async function _convertBlobs(records) {
+  let paths = Object.keys(records)
+  for (var i = 0; i < paths.length; i++) {
+    let record = records[paths[i]]
+    if (record.encoding === 'blob') {
+      record.data = await _blobToArrayBuffer(record.data)
+    }
+  }
+}
+
+function _blobToArrayBuffer(blob) {
+  return new Promise(resolve => {
+    let reader = new FileReader()
+    reader.onload = function() {
+      if (reader.readyState === 2) {
+        var buffer = new Buffer(reader.result)
+        resolve(buffer)
+      }
+    }
+    reader.readAsArrayBuffer(blob)
+  })
 }
 
 

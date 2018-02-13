@@ -1,6 +1,7 @@
 const fs = require('fs')
 const path = require('path')
 const listDir = require('./listDir')
+const httpError = require('./httpError')
 
 // these extensions are considered to have text content
 const TEXTISH = ['txt', 'html', 'xml', 'json']
@@ -18,14 +19,21 @@ module.exports = async function readArchive(archiveDir, opts = {}) {
     // first get a list of stats
     const entries = await listDir(archiveDir, opts)
     // then get file records as specified TODO:link
-    let result = await Promise.all(entries.map(entry => {
-      return _getFileRecord(entry, opts)
-    }))
+    let result = {}
+    for (var i = 0; i < entries.length; i++) {
+      let entry = entries[i]
+      let record = await _getFileRecord(entry, opts)
+      result[record.path] = record
+    }
+    // HACK: we should not mix records with the version property!
+    // TODO: Change the result to { records: {...}, version: "0" }
+    result.version = "0"
     return result
   } else {
-    throw new Error(archiveDir + ' is not a document archive')
+    throw httpError(500, archiveDir + ' is not a valid document archive')
   }
 }
+
 
 /*
   Provides a record for a file as it is used for the DocumentArchive presistence protocol.
