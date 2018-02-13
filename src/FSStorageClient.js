@@ -28,10 +28,38 @@ class FSStorageClient {
 
   write(archiveDir, rawArchive) {
     return new Promise( async (resolve) => {
+      await _convertBlobs(rawArchive)
       await writeArchive(archiveDir, rawArchive)
       resolve(JSON.stringify({ version: 0 }))
     })
   }
 }
+
+/*
+  Convert all blobs to array buffers
+*/
+async function _convertBlobs(records) {
+  let paths = Object.keys(records)
+  for (var i = 0; i < paths.length; i++) {
+    let record = records[paths[i]]
+    if (record.encoding === 'blob') {
+      record.data = await _blobToArrayBuffer(record.data)
+    }
+  }
+}
+
+function _blobToArrayBuffer(blob) {
+  return new Promise(resolve => {
+    let reader = new FileReader()
+    reader.onload = function() {
+      if (reader.readyState === 2) {
+        var buffer = new Buffer(reader.result)
+        resolve(buffer)
+      }
+    }
+    reader.readAsArrayBuffer(blob)
+  })
+}
+
 
 module.exports = FSStorageClient
