@@ -30,7 +30,7 @@ module.exports = async function readArchive(archiveDir, opts = {}) {
     result.version = "0"
     return result
   } else {
-    throw httpError(500, archiveDir + ' is not a valid document archive')
+    throw httpError(404, archiveDir + ' is not a valid document archive')
   }
 }
 
