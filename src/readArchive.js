@@ -1,7 +1,6 @@
 const fs = require('fs')
 const path = require('path')
 const listDir = require('./listDir')
-const httpError = require('./httpError')
 
 // these extensions are considered to have text content
 const TEXTISH = ['txt', 'html', 'xml', 'json']
@@ -31,7 +30,7 @@ module.exports = async function readArchive(archiveDir, opts = {}) {
       version: "0"
     }
   } else {
-    throw httpError(404, archiveDir + ' is not a valid document archive')
+    throw new Error(archiveDir + ' is not a valid document archive.')
   }
 }
 

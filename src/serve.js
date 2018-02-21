@@ -29,7 +29,7 @@ module.exports = function serve(app, opts = {}) {
     // checking that the archiveDir is really a subfolder of the root dir
     let relDir = path.relative(rootDir, archiveDir)
     if (relDir.charCodeAt(0) === DOT) {
-      return res.status(403)
+      return res.status(403).send()
     }
     try {
       let rawArchive = await readArchive(archiveDir, {
@@ -48,7 +48,7 @@ module.exports = function serve(app, opts = {}) {
       res.json(rawArchive)
     } catch(err) { // eslint-disable-line no-catch-shadow
       console.error(err)
-      res.status(err.httpStatus)
+      res.status(404).send()
     }
   })
 
@@ -60,11 +60,11 @@ module.exports = function serve(app, opts = {}) {
     parseFormdata(req, (err, formData) => {
       if (err) {
         console.error(err)
-        return res.status(500)
+        return res.status(500).send()
       }
       let archiveDir = path.join(rootDir, id)
       fs.stat(archiveDir, async (err) => {
-        if (err) return res.status(404)
+        if (err) return res.status(404).send()
         try {
           let archive = JSON.parse(formData.fields._archive)
           formData.parts.forEach((part) => {
@@ -83,10 +83,10 @@ module.exports = function serve(app, opts = {}) {
           res.status(200).json({ version })
         } catch (err) { // eslint-disable-line no-catch-shadow
           console.error(err)
-          res.status(500)
+          res.status(500).send()
         }
       })
-      res.status(500)
+      res.status(500).send()
     })
   })
 
@@ -94,7 +94,7 @@ module.exports = function serve(app, opts = {}) {
   app.get(apiUrl+'/:dar/assets/:file', (req, res) => {
     let filePath = path.join(rootDir, req.params.dar, req.params.file)
     fs.stat(filePath, (err) => {
-      if (err) return res.status(404)
+      if (err) return res.status(404).send()
       res.sendFile(filePath)
     })
   })

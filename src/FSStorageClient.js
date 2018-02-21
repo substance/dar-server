@@ -11,26 +11,34 @@ const path = require('path')
 class FSStorageClient {
 
   read(archiveDir) {
-    return new Promise( async (resolve) => {
-      let rawArchive = await readArchive(archiveDir, { noBinaryContent: true, ignoreDotFiles: true })
-      // Turn binaries into urls
-      Object.keys(rawArchive.resources).forEach(recordPath => {
-        let record = rawArchive.resources[recordPath]
-        if (record._binary) {
-          delete record._binary
-          record.encoding = 'url'
-          record.data = path.join(archiveDir, record.path)
-        }
-      })
-      resolve(rawArchive)
+    return new Promise( async (resolve, reject) => {
+      try {
+        let rawArchive = await readArchive(archiveDir, { noBinaryContent: true, ignoreDotFiles: true })
+        // Turn binaries into urls
+        Object.keys(rawArchive.resources).forEach(recordPath => {
+          let record = rawArchive.resources[recordPath]
+          if (record._binary) {
+            delete record._binary
+            record.encoding = 'url'
+            record.data = path.join(archiveDir, record.path)
+          }
+        })
+        resolve(rawArchive)
+      } catch(err) {
+        reject(err)
+      }
     })
   }
 
   write(archiveDir, rawArchive) {
-    return new Promise( async (resolve) => {
-      await _convertBlobs(rawArchive)
-      let version = await writeArchive(archiveDir, rawArchive)
-      resolve(JSON.stringify({ version }))
+    return new Promise( async (resolve, reject) => {
+      try {
+        await _convertBlobs(rawArchive)
+        let version = await writeArchive(archiveDir, rawArchive)
+        resolve(JSON.stringify({ version }))
+      } catch(err) {
+        reject(err)
+      }
     })
   }
 }
