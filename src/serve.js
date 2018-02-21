@@ -32,7 +32,11 @@ module.exports = function serve(app, opts = {}) {
       return res.status(403)
     }
     try {
-      let records = await readArchive(archiveDir, { noBinaryContent: true, ignoreDotFiles: true })
+      let records = await readArchive(archiveDir, {
+        noBinaryContent: true,
+        ignoreDotFiles: true,
+        versioning: opts.versioning
+      })
       Object.keys(records).forEach(recordPath => {
         let record = records[recordPath]
         if (record._binary) {
@@ -73,7 +77,9 @@ module.exports = function serve(app, opts = {}) {
               record.data = part.stream
             }
           })
-          let version = await writeArchive(archiveDir, archive, { versioning: opts.versioning })
+          let version = await writeArchive(archiveDir, archive, {
+            versioning: opts.versioning
+          })
           res.status(200).json({ version })
         } catch (err) { // eslint-disable-line no-catch-shadow
           console.error(err)
