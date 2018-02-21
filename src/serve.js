@@ -32,20 +32,20 @@ module.exports = function serve(app, opts = {}) {
       return res.status(403)
     }
     try {
-      let records = await readArchive(archiveDir, {
+      let rawArchive = await readArchive(archiveDir, {
         noBinaryContent: true,
         ignoreDotFiles: true,
         versioning: opts.versioning
       })
-      Object.keys(records).forEach(recordPath => {
-        let record = records[recordPath]
+      Object.keys(rawArchive.resources).forEach(recordPath => {
+        let record = rawArchive.resources[recordPath]
         if (record._binary) {
           delete record._binary
           record.encoding = 'url'
           record.data = `${baseUrl}/${id}/assets/${record.path}`
         }
       })
-      res.json(records)
+      res.json(rawArchive)
     } catch(err) { // eslint-disable-line no-catch-shadow
       console.error(err)
       res.status(err.httpStatus)
