@@ -12,25 +12,25 @@ class FSStorageClient {
 
   read(archiveDir) {
     return new Promise( async (resolve) => {
-      let records = await readArchive(archiveDir, { noBinaryContent: true, ignoreDotFiles: true })
+      let rawArchive = await readArchive(archiveDir, { noBinaryContent: true, ignoreDotFiles: true })
       // Turn binaries into urls
-      Object.keys(records).forEach(recordPath => {
-        let record = records[recordPath]
+      Object.keys(rawArchive.resources).forEach(recordPath => {
+        let record = rawArchive.resources[recordPath]
         if (record._binary) {
           delete record._binary
           record.encoding = 'url'
           record.data = path.join(archiveDir, record.path)
         }
       })
-      resolve(records)
+      resolve(rawArchive)
     })
   }
 
   write(archiveDir, rawArchive) {
     return new Promise( async (resolve) => {
       await _convertBlobs(rawArchive)
-      await writeArchive(archiveDir, rawArchive)
-      resolve(JSON.stringify({ version: 0 }))
+      let version = await writeArchive(archiveDir, rawArchive)
+      resolve(JSON.stringify({ version }))
     })
   }
 }
@@ -38,10 +38,11 @@ class FSStorageClient {
 /*
   Convert all blobs to array buffers
 */
-async function _convertBlobs(records) {
-  let paths = Object.keys(records)
+async function _convertBlobs(rawArchive) {
+  let resources = rawArchive.resources
+  let paths = Object.keys(resources)
   for (var i = 0; i < paths.length; i++) {
-    let record = records[paths[i]]
+    let record = resources[paths[i]]
     if (record.encoding === 'blob') {
       record.data = await _blobToArrayBuffer(record.data)
     }

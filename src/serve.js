@@ -2,7 +2,6 @@ const fs = require('fs')
 const path = require('path')
 const parseFormdata = require('parse-formdata')
 const readArchive = require('./readArchive')
-const readVersion = require('./readVersion')
 const writeArchive = require('./writeArchive')
 
 const DOT = '.'.charCodeAt(0)
@@ -42,8 +41,6 @@ module.exports = function serve(app, opts = {}) {
           record.data = `${baseUrl}/${id}/assets/${record.path}`
         }
       })
-      // TODO: we should not mix records and the version property
-      records.version = '0'
       res.json(records)
     } catch(err) { // eslint-disable-line no-catch-shadow
       console.error(err)
@@ -53,8 +50,6 @@ module.exports = function serve(app, opts = {}) {
 
   /*
     Endpoint for uploading files.
-
-    NOTE: Versioning is disabled atm. We may wand to back it via Git.
   */
   app.put(apiUrl+'/:dar', (req, res) => {
     let id = req.params.dar || 'default'
@@ -68,15 +63,9 @@ module.exports = function serve(app, opts = {}) {
         if (err) return res.status(404)
         try {
           let archive = JSON.parse(formData.fields._archive)
-          let version = await readVersion(archiveDir)
-          // For now the client must provide the correct version number
-          if (version !== archive.version) {
-            res.status(500).send('Incompatible version')
-            return
-          }
           formData.parts.forEach((part) => {
             let filename = part.filename
-            let record = archive[filename]
+            let record = archive.resources[filename]
             if (!record) {
               console.error('No document record registered for blob', filename)
             } else {
@@ -84,22 +73,13 @@ module.exports = function serve(app, opts = {}) {
               record.data = part.stream
             }
           })
-          // TODO: need a generic way to create a version
-          // with git we would use the commit sha of the latest commit
-          // TODO: without git this is kind of dangerous as we can't rollback
-          await writeArchive(archiveDir, archive)
-          // TODO: we could do something like this
-          // let newVersion = String(Number.parseInt(version, 10) + 1)
-          // await writeVersion(archiveDir, newVersion)
-          // ... but instead we just return the same version all the time
-          let newVersion = version
-          res.status(200).json({ version: newVersion })
+          let version = await writeArchive(archiveDir, archive, { versioning: opts.versioning })
+          res.status(200).json({ version })
         } catch (err) { // eslint-disable-line no-catch-shadow
           console.error(err)
           res.status(500)
         }
       })
-      // TODO: if done send `{ version: newVersion }`
       res.status(500)
     })
   })
