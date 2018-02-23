@@ -2,7 +2,6 @@ const fs = require('fs')
 const path = require('path')
 const parseFormdata = require('parse-formdata')
 const readArchive = require('./readArchive')
-const readVersion = require('./readVersion')
 const writeArchive = require('./writeArchive')
 
 const DOT = '.'.charCodeAt(0)
@@ -30,53 +29,47 @@ module.exports = function serve(app, opts = {}) {
     // checking that the archiveDir is really a subfolder of the root dir
     let relDir = path.relative(rootDir, archiveDir)
     if (relDir.charCodeAt(0) === DOT) {
-      return res.status(403)
+      return res.status(403).send()
     }
     try {
-      let records = await readArchive(archiveDir, { noBinaryContent: true, ignoreDotFiles: true })
-      Object.keys(records).forEach(recordPath => {
-        let record = records[recordPath]
+      let rawArchive = await readArchive(archiveDir, {
+        noBinaryContent: true,
+        ignoreDotFiles: true,
+        versioning: opts.versioning
+      })
+      Object.keys(rawArchive.resources).forEach(recordPath => {
+        let record = rawArchive.resources[recordPath]
         if (record._binary) {
           delete record._binary
           record.encoding = 'url'
           record.data = `${baseUrl}/${id}/assets/${record.path}`
         }
       })
-      // TODO: we should not mix records and the version property
-      records.version = '0'
-      res.json(records)
+      res.json(rawArchive)
     } catch(err) { // eslint-disable-line no-catch-shadow
       console.error(err)
-      res.status(err.httpStatus)
+      res.status(404).send()
     }
   })
 
   /*
     Endpoint for uploading files.
-
-    NOTE: Versioning is disabled atm. We may wand to back it via Git.
   */
   app.put(apiUrl+'/:dar', (req, res) => {
     let id = req.params.dar || 'default'
     parseFormdata(req, (err, formData) => {
       if (err) {
         console.error(err)
-        return res.status(500)
+        return res.status(500).send()
       }
       let archiveDir = path.join(rootDir, id)
       fs.stat(archiveDir, async (err) => {
-        if (err) return res.status(404)
+        if (err) return res.status(404).send()
         try {
           let archive = JSON.parse(formData.fields._archive)
-          let version = await readVersion(archiveDir)
-          // For now the client must provide the correct version number
-          if (version !== archive.version) {
-            res.status(500).send('Incompatible version')
-            return
-          }
           formData.parts.forEach((part) => {
             let filename = part.filename
-            let record = archive[filename]
+            let record = archive.resources[filename]
             if (!record) {
               console.error('No document record registered for blob', filename)
             } else {
@@ -84,23 +77,16 @@ module.exports = function serve(app, opts = {}) {
               record.data = part.stream
             }
           })
-          // TODO: need a generic way to create a version
-          // with git we would use the commit sha of the latest commit
-          // TODO: without git this is kind of dangerous as we can't rollback
-          await writeArchive(archiveDir, archive)
-          // TODO: we could do something like this
-          // let newVersion = String(Number.parseInt(version, 10) + 1)
-          // await writeVersion(archiveDir, newVersion)
-          // ... but instead we just return the same version all the time
-          let newVersion = version
-          res.status(200).json({ version: newVersion })
+          let version = await writeArchive(archiveDir, archive, {
+            versioning: opts.versioning
+          })
+          res.status(200).json({ version })
         } catch (err) { // eslint-disable-line no-catch-shadow
           console.error(err)
-          res.status(500)
+          res.status(500).send()
         }
       })
-      // TODO: if done send `{ version: newVersion }`
-      res.status(500)
+      res.status(500).send()
     })
   })
 
@@ -108,7 +94,7 @@ module.exports = function serve(app, opts = {}) {
   app.get(apiUrl+'/:dar/assets/:file', (req, res) => {
     let filePath = path.join(rootDir, req.params.dar, req.params.file)
     fs.stat(filePath, (err) => {
-      if (err) return res.status(404)
+      if (err) return res.status(404).send()
       res.sendFile(filePath)
     })
   })

@@ -1,7 +1,6 @@
 const fs = require('fs')
 const path = require('path')
 const listDir = require('./listDir')
-const httpError = require('./httpError')
 
 // these extensions are considered to have text content
 const TEXTISH = ['txt', 'html', 'xml', 'json']
@@ -12,6 +11,7 @@ const TEXTISH = ['txt', 'html', 'xml', 'json']
   @param {object} opts
     - `noBinaryData`: do not load the content of binary files
     - `ignoreDotFiles`: ignore dot-files
+    - versioning: set to true if versioning should be enabled
 */
 module.exports = async function readArchive(archiveDir, opts = {}) {
   // make sure that the given path is a dar
@@ -19,24 +19,24 @@ module.exports = async function readArchive(archiveDir, opts = {}) {
     // first get a list of stats
     const entries = await listDir(archiveDir, opts)
     // then get file records as specified TODO:link
-    let result = {}
+    let resources = {}
     for (var i = 0; i < entries.length; i++) {
       let entry = entries[i]
       let record = await _getFileRecord(entry, opts)
-      result[record.path] = record
+      resources[record.path] = record
     }
-    // HACK: we should not mix records with the version property!
-    // TODO: Change the result to { records: {...}, version: "0" }
-    result.version = "0"
-    return result
+    return {
+      resources,
+      version: "0"
+    }
   } else {
-    throw httpError(404, archiveDir + ' is not a valid document archive')
+    throw new Error(archiveDir + ' is not a valid document archive.')
   }
 }
 
 
 /*
-  Provides a record for a file as it is used for the DocumentArchive presistence protocol.
+  Provides a record for a file as it is used for the DocumentArchive persistence protocol.
 
   Binary files can be exluced using `opts.noBinaryData`.
 

@@ -1,10 +1,22 @@
 const fs = require('fs')
 const path = require('path')
 
-module.exports = async function writeArchive(archiveDir, rawArchive) {
-  let files = Object.keys(rawArchive)
-  return Promise.all(files.map(f => {
-    let record = rawArchive[f]
+/*
+  TODO: Implement versioning backed by Git
+        - Check if rawArchive.version === latest Git sha
+        - After saving `git add` all changed files and `git commit` them
+        - Return new sha (newVersion) to client
+*/
+module.exports = async function writeArchive(archiveDir, rawArchive, opts = {}) {
+  let resourceNames = Object.keys(rawArchive.resources)
+  let newVersion = "0"
+
+  if (opts.versioning) {
+    console.warn('Git based versioning is not yet implemented.')
+  }
+
+  return Promise.all(resourceNames.map(f => {
+    let record = rawArchive.resources[f]
     switch(record.encoding) {
       case 'utf8': {
         return _writeFile(path.join(archiveDir, f), record.data, 'utf8')
@@ -16,7 +28,9 @@ module.exports = async function writeArchive(archiveDir, rawArchive) {
       default:
         return false
     }
-  }))
+  })).then(() => {
+    return newVersion
+  })
 }
 
 function _writeFile(p, data, encoding) {
