@@ -3,6 +3,7 @@ const path = require('path')
 const parseFormdata = require('parse-formdata')
 const readArchive = require('./readArchive')
 const writeArchive = require('./writeArchive')
+const cloneArchive = require('./cloneArchive')
 
 const DOT = '.'.charCodeAt(0)
 
@@ -88,6 +89,21 @@ module.exports = function serve(app, opts = {}) {
       })
       res.status(500).send()
     })
+  })
+
+  /*
+    Used to clone/fork an archive under a new id
+  */
+  app.put(apiUrl+'/:dar/clone/:newdar', async (req, res) => {
+    let originalPath = path.join(rootDir, req.params.dar)
+    let newPath = path.join(rootDir, req.params.newdar)
+    try {
+      await cloneArchive(originalPath, newPath)
+      res.status(200).json({ status: 'ok' })
+    } catch(err) { // eslint-disable-line no-catch-shadow
+      console.error(err)
+      res.status(500).send()
+    }
   })
 
   // this endpoint is used for serving files statically

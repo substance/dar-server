@@ -1,5 +1,6 @@
 const readArchive = require('./readArchive')
 const writeArchive = require('./writeArchive')
+const cloneArchive = require('./cloneArchive')
 const path = require('path')
 
 /*
@@ -36,6 +37,17 @@ class FSStorageClient {
         await _convertBlobs(rawArchive)
         let version = await writeArchive(archiveDir, rawArchive)
         resolve(JSON.stringify({ version }))
+      } catch(err) {
+        reject(err)
+      }
+    })
+  }
+
+  clone(archiveDir, newArchiveDir) {
+    return new Promise( async (resolve, reject) => {
+      try {
+        await cloneArchive(archiveDir, newArchiveDir)
+        resolve()
       } catch(err) {
         reject(err)
       }

@@ -1,6 +1,6 @@
 const fs = require('fs')
-const path = require('path')
 const listDir = require('./listDir')
+const { isDocumentArchive } = require('./util')
 
 // these extensions are considered to have text content
 const TEXTISH = ['txt', 'html', 'xml', 'json']
@@ -15,7 +15,7 @@ const TEXTISH = ['txt', 'html', 'xml', 'json']
 */
 module.exports = async function readArchive(archiveDir, opts = {}) {
   // make sure that the given path is a dar
-  if (await _isDocumentArchive(archiveDir)) {
+  if (await isDocumentArchive(archiveDir)) {
     // first get a list of stats
     const entries = await listDir(archiveDir, opts)
     // then get file records as specified TODO:link
@@ -90,18 +90,7 @@ async function _getFileRecord(fileEntry, opts) {
   }
 }
 
-async function _isDocumentArchive(archiveDir) {
-  // assuming it is a DAR if the folder exists and there is a manifest.xml
-  return _fileExists(path.join(archiveDir, 'manifest.xml'))
-}
 
-function _fileExists(path) {
-  return new Promise(resolve => {
-    fs.exists(path, (exists) => {
-      resolve(exists)
-    })
-  })
-}
 
 function _isTextFile(f) {
   return new RegExp(`\\.(${TEXTISH.join('|')})$`).exec(f)
