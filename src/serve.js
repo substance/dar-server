@@ -87,7 +87,6 @@ module.exports = function serve(app, opts = {}) {
           res.status(500).send()
         }
       })
-      res.status(500).send()
     })
   })
 
