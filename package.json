@@ -1,6 +1,6 @@
 {
   "name": "dar-server",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "description": "Filesystem backend for document archive",
   "main": "index.js",
   "scripts": {
@@ -12,8 +12,10 @@
   "dependencies": {
     "colors": "^1.1.2",
     "express": "^4.16.2",
+    "fs-extra": "^5.0.0",
+    "glob": "^7.1.2",
     "parse-formdata": "^1.0.2",
-    "yargs": "^11.0.0",
-    "fs-extra": "^5.0.0"
+    "substance": "^1.0.0-preview.53",
+    "yargs": "^11.0.0"
   }
 }
