@@ -4,6 +4,7 @@ const parseFormdata = require('parse-formdata')
 const readArchive = require('./readArchive')
 const writeArchive = require('./writeArchive')
 const cloneArchive = require('./cloneArchive')
+const listArchives = require('./listArchives')
 
 const DOT = '.'.charCodeAt(0)
 
@@ -19,6 +20,18 @@ module.exports = function serve(app, opts = {}) {
     res.header("Access-Control-Allow-Headers", "X-Requested-With");
     res.header("Access-Control-Allow-Methods", "*");
     next();
+  })
+
+  // listing avalable dars
+  app.get(apiUrl+'/list', async (req, res) => {
+    listArchives(rootDir)
+    .then((records) => {
+      res.status(200).json(records)
+    })
+    .catch((err) => {
+      console.error(err)
+      res.status(500).send()
+    })
   })
 
   /*
