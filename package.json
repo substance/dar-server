@@ -17,5 +17,8 @@
     "parse-formdata": "^1.0.2",
     "substance": "^1.0.0-preview.53",
     "yargs": "^11.0.0"
+  },
+  "bin": {
+    "dar-server": "bin/dar-server.js"
   }
 }
