@@ -11,11 +11,14 @@
   "license": "MIT",
   "dependencies": {
     "colors": "^1.1.2",
-    "express": "^4.16.2",
+    "express": "^4.16.3",
     "fs-extra": "^5.0.0",
     "glob": "^7.1.2",
     "parse-formdata": "^1.0.2",
     "substance": "^1.0.0-preview.53",
     "yargs": "^11.0.0"
+  },
+  "bin": {
+    "dar-server": "bin/dar-server.js"
   }
 }
