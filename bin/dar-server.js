@@ -37,6 +37,6 @@ function _serve (argv) {
     rootDir
   })
   app.listen(port, 'localhost', () => {
-    console.log(`Running dar-server on port ${port}`)
+    console.log(`DAR server is running on http://localhost:${port}`)
   })
 }
