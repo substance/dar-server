@@ -45,3 +45,13 @@ darServer.serve(app, {
   apiUrl: '/archives'
 })
 ```
+
+## Command-line tool
+
+This module comes with a command-line tool that starts `dar-server` in a new express instance.
+
+```
+$ npm install -g dar-server
+$ dar-server ./my-archives
+DAR server is running on http://localhost:4100
+```
