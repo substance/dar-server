@@ -23,7 +23,7 @@ module.exports = function serve(app, opts = {}) {
   })
 
   // listing avalable dars
-  app.get(apiUrl+'/list', async (req, res) => {
+  app.get(apiUrl+'/!list', async (req, res) => {
     listArchives(rootDir)
     .then((records) => {
       res.status(200).json(records)
