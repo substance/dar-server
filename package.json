@@ -1,6 +1,6 @@
 {
   "name": "dar-server",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Filesystem backend for document archive",
   "main": "index.js",
   "scripts": {
