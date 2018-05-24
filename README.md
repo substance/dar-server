@@ -52,3 +52,19 @@ $ npm install -g dar-server
 $ dar-server ./my-archives
 DAR server is running on http://localhost:4100
 ```
+
+To start you could take the examples from the [DAR repository](https://github.com/substance/dar):
+```
+git clone https://github.com/substance/dar.git
+```
+and then start the dar-server using
+```
+dar-server ./dar/examples
+```
+After that you should be able to open
+```
+http://localhost:4100/!list
+```
+in the browser and see a listing of found archives.
+Notice, that `dar-server` is just a backend for serving archives.
+To be able to read and edit the context you need to use [Texture](https://github.com/substance/texture).
